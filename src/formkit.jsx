@@ -4,9 +4,15 @@
 // #4A3B66, หัวข้อ/ปุ่มใช้ Baloo 2, เนื้อหาใช้ Nunito
 // ============================================================================
 
+// ตั้งใจใช้ <div> แทน <label> ครอบ — เดิมใช้ <label> ซึ่งใช้ได้ดีตอนมี input เดียวข้างใน
+// (เช่นช่อง "จำนวน") แต่พังกับช่องที่มี "หลายฟอร์มคอนโทรลอยู่ในป้ายเดียวกัน" (เช่นช่อง "เวลาที่ใช้"
+// ที่มีทั้ง NumberInput + SelectInput เลือกหน่วยอยู่ข้างใน <label> เดียวกัน) — เบราว์เซอร์มือถือ
+// บางตัว (โดยเฉพาะ WebView) จะสับสนว่าจะโฟกัส/ส่ง synthetic click ไปที่คอนโทรลไหนเมื่อแตะ ทำให้
+// แตะแล้วโฟกัสหลุด/พิมพ์ไม่เข้าอย่างไม่คงเส้นคงวา ย้ายมาใช้ <div> ธรรมดาตัดปัญหานี้ทั้งหมด
+// (แลกกับการที่แตะข้อความป้ายชื่อฟิลด์แล้วไม่โฟกัส input ให้อัตโนมัติอีกต่อไป แต่ผลกระทบเล็กน้อยมาก)
 export function Field({ label, children, hint }) {
   return (
-    <label className="mb-3.5 block">
+    <div className="mb-3.5 block">
       <span className="mb-1.5 block text-[12.5px] font-semibold text-[#4A3B66]/70" style={{ fontFamily: "'Nunito', sans-serif" }}>
         {label}
       </span>
@@ -16,7 +22,7 @@ export function Field({ label, children, hint }) {
           {hint}
         </span>
       )}
-    </label>
+    </div>
   );
 }
 
@@ -90,6 +96,50 @@ export function DangerButton({ children, className = "", ...props }) {
     >
       {children}
     </button>
+  );
+}
+
+// ปุ่มเล็กๆ สำหรับ "ค่าลัด" ที่แตะเลือกได้ทันทีโดยไม่ต้องพิมพ์ (เช่นเวลาที่ใช้ยอดฮิต) — เผื่อไว้เป็นทาง
+// เลือกสำรองกรณีคีย์บอร์ดตัวเลขของอุปกรณ์บางรุ่นมีปัญหา ไม่ต้องพึ่งการพิมพ์เลยก็ใช้งานต่อได้
+export function ChipButton({ children, active, className = "", ...props }) {
+  return (
+    <button
+      type="button"
+      {...props}
+      className={`rounded-full px-2.5 py-1 text-[11.5px] font-semibold transition-colors active:scale-95 ${className}`}
+      style={{
+        background: active ? "linear-gradient(90deg,#E8C2EE,#F5CBDD)" : "rgba(255,255,255,0.6)",
+        color: active ? "#7A2E5C" : "#4A3B6699",
+        fontFamily: "'Nunito', sans-serif",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+// ค่าลัดเวลาที่ใช้บ่อย — แตะเลือกได้ทันทีโดยไม่ต้องพิมพ์ (ทางเลือกสำรองกรณีพิมพ์ในช่องตัวเลขไม่ได้
+// บนอุปกรณ์บางรุ่น) ใช้ร่วมกันทั้ง AddActivityModal (เวลาที่ใช้ตอนเพิ่ม) และ EditActivityModal (เวลาที่เหลือตอนแก้)
+export const DURATION_PRESETS = [
+  { label: "5 น.", value: "5", unit: "minutes" },
+  { label: "10 น.", value: "10", unit: "minutes" },
+  { label: "15 น.", value: "15", unit: "minutes" },
+  { label: "30 น.", value: "30", unit: "minutes" },
+  { label: "1 ชม.", value: "1", unit: "hours" },
+  { label: "2 ชม.", value: "2", unit: "hours" },
+  { label: "4 ชม.", value: "4", unit: "hours" },
+  { label: "8 ชม.", value: "8", unit: "hours" },
+];
+
+export function DurationPresetRow({ value, unit, onPick }) {
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1.5">
+      {DURATION_PRESETS.map((p) => (
+        <ChipButton key={p.label} active={value === p.value && unit === p.unit} onClick={() => onPick(p.value, p.unit)}>
+          {p.label}
+        </ChipButton>
+      ))}
+    </div>
   );
 }
 

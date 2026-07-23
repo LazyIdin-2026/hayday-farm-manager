@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import Modal from "./Modal.jsx";
 import { TYPE_META, ACTIVITY_TYPE_ORDER } from "./typeMeta.js";
-import { Field, TextInput, NumberInput, DateInput, SelectInput, PrimaryButton, SecondaryButton, TypePill } from "./formkit.jsx";
+import { Field, TextInput, NumberInput, DateInput, SelectInput, PrimaryButton, SecondaryButton, TypePill, DurationPresetRow } from "./formkit.jsx";
 
 const SIMPLE_TYPES = ["crop", "animal", "production"];
 const ORDER_TYPES = ["boat_truck_order", "town_order"];
@@ -183,6 +183,14 @@ export default function AddActivityModal({ open, onClose, onSubmit, initialType 
                     <option value="hours">ชั่วโมง</option>
                   </SelectInput>
                 </div>
+                <DurationPresetRow
+                  value={durationValue}
+                  unit={durationUnit}
+                  onPick={(v, u) => {
+                    setDurationValue(v);
+                    setDurationUnit(u);
+                  }}
+                />
               </Field>
             </div>
           </>
@@ -214,6 +222,14 @@ export default function AddActivityModal({ open, onClose, onSubmit, initialType 
                     <option value="hours">ชั่วโมง</option>
                   </SelectInput>
                 </div>
+                <DurationPresetRow
+                  value={durationValue}
+                  unit={durationUnit}
+                  onPick={(v, u) => {
+                    setDurationValue(v);
+                    setDurationUnit(u);
+                  }}
+                />
               </Field>
             </div>
           </>

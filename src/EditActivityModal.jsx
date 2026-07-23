@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Modal from "./Modal.jsx";
 import { TYPE_META } from "./typeMeta.js";
-import { Field, NumberInput, SelectInput, PrimaryButton, SecondaryButton, DangerButton } from "./formkit.jsx";
+import { Field, NumberInput, SelectInput, PrimaryButton, SecondaryButton, DangerButton, DurationPresetRow } from "./formkit.jsx";
 
 // ประเภทที่แก้ไขจำนวน/เวลาได้ตรงๆ (มีฟิลด์ quantity + endsAt เดี่ยว) ต่างจากออเดอร์ที่เป็นรายการหลายไอเทม
 const EDITABLE_TYPES = ["crop", "animal", "production", "event_production"];
@@ -137,6 +137,14 @@ export default function EditActivityModal({ open, item, onClose, onSave, onDelet
                   <option value="hours">ชั่วโมง</option>
                 </SelectInput>
               </div>
+              <DurationPresetRow
+                value={durationValue}
+                unit={durationUnit}
+                onPick={(v, u) => {
+                  setDurationValue(v);
+                  setDurationUnit(u);
+                }}
+              />
             </Field>
           </div>
         </form>
