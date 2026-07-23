@@ -27,8 +27,20 @@ export function TextInput({ className = "", style, ...props }) {
   return <input {...props} className={`${inputBase} ${className}`} style={{ fontFamily: "'Nunito', sans-serif", ...style }} />;
 }
 
+// ตั้งใจใช้ type="text" + inputMode="decimal" แทน type="number" ตรงๆ — เบราว์เซอร์มือถือ
+// บางรุ่น/บางล็อกเกล (เช่น Android ที่ตั้งค่าเป็นภาษาไทย) มีบั๊กที่ type="number" ปฏิเสธการพิมพ์
+// ตัวเลขเงียบๆ (คีย์บอร์ดตัวเลขขึ้นให้ปกติ แต่กดแล้วไม่มีอะไรขึ้นในช่อง) เพราะตีความ decimal
+// separator/locale ผิด — inputMode="decimal" ยังเรียกคีย์บอร์ดตัวเลขขึ้นมาเหมือนเดิม แต่พิมพ์ได้แน่นอนกว่า
 export function NumberInput({ className = "", style, ...props }) {
-  return <input type="number" {...props} className={`${inputBase} ${className}`} style={{ fontFamily: "'Nunito', sans-serif", ...style }} />;
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      {...props}
+      className={`${inputBase} ${className}`}
+      style={{ fontFamily: "'Nunito', sans-serif", ...style }}
+    />
+  );
 }
 
 export function DateInput({ className = "", style, ...props }) {

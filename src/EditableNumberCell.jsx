@@ -32,7 +32,8 @@ export default function EditableNumberCell({ value, placeholder, onCommit, min =
 
   return (
     <input
-      type="number"
+      type="text"
+      inputMode="decimal"
       min={min}
       value={draft}
       placeholder={placeholder}
