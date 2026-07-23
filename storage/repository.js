@@ -186,6 +186,26 @@ export function createRepository(adapter) {
   async function listActivities(accountId) {
     return adapter.getByIndex('activities', 'accountId', accountId);
   }
+  // แก้ไขกิจกรรมที่ยังไม่เก็บ (กันเผลอกรอกจำนวน/เวลาผิดตอนเพิ่ม เช่นใส่หน่วยเวลาผิด) — แก้ได้แค่ quantity/เวลาที่เหลือ
+  // (นับเวลาที่เหลือใหม่จาก "ตอนนี้" ไม่ใช่แก้ startedAt เดิม เพื่อให้ตรงกับที่ผู้ใช้ตั้งใจแก้ "เวลาที่เหลือ")
+  async function updateActivity(activityId, { quantity, durationSec } = {}) {
+    return adapter.transaction(['activities'], async (tx) => {
+      const act = await tx.get('activities', activityId);
+      if (!act) throw new Error(`ไม่พบกิจกรรม id=${activityId}`);
+      if (act.status === 'collected') throw new Error('กิจกรรมนี้เก็บไปแล้ว แก้ไขไม่ได้');
+      const updated = { ...act };
+      if (quantity != null) updated.quantity = quantity;
+      if (durationSec != null) updated.endsAt = new Date(Date.now() + durationSec * 1000).toISOString();
+      await tx.put('activities', updated);
+      return true;
+    });
+  }
+  async function deleteActivity(activityId) {
+    return adapter.transaction(['activities'], async (tx) => {
+      await tx.delete('activities', activityId);
+      return true;
+    });
+  }
 
   // -------------------- Events --------------------
   async function listEvents() {
@@ -214,6 +234,25 @@ export function createRepository(adapter) {
         accountId: ep.accountId, itemId: ep.itemId, changeQty: ep.quantity,
         reason: 'event_production_collect', relatedTable: 'eventProduction', relatedId: id,
       });
+    });
+  }
+  // เหมือน updateActivity/deleteActivity แต่สำหรับโรงงานอีเวนต์ (ตารางแยกกัน)
+  async function updateEventProduction(id, { quantity, durationSec } = {}) {
+    return adapter.transaction(['eventProduction'], async (tx) => {
+      const ep = await tx.get('eventProduction', id);
+      if (!ep) throw new Error(`ไม่พบโรงงานอีเวนต์ id=${id}`);
+      if (ep.status === 'collected') throw new Error('เก็บไปแล้ว แก้ไขไม่ได้');
+      const updated = { ...ep };
+      if (quantity != null) updated.quantity = quantity;
+      if (durationSec != null) updated.endsAt = new Date(Date.now() + durationSec * 1000).toISOString();
+      await tx.put('eventProduction', updated);
+      return true;
+    });
+  }
+  async function deleteEventProduction(id) {
+    return adapter.transaction(['eventProduction'], async (tx) => {
+      await tx.delete('eventProduction', id);
+      return true;
     });
   }
 
@@ -251,6 +290,15 @@ export function createRepository(adapter) {
       return true;
     });
   }
+  // ลบออเดอร์ทิ้ง (เช่นสร้างผิด/ยกเลิกไม่ทำแล้ว) ลบรายการไอเทมของออเดอร์นี้ทิ้งไปด้วย
+  async function deleteBoatTruckOrder(orderId) {
+    return adapter.transaction(['boatTruckOrders', 'boatTruckOrderItems'], async (tx) => {
+      const items = await tx.getByIndex('boatTruckOrderItems', 'orderId', orderId);
+      for (const it of items) await tx.delete('boatTruckOrderItems', it.id);
+      await tx.delete('boatTruckOrders', orderId);
+      return true;
+    });
+  }
 
   // -------------------- Town orders (แยกจากเรือ/รถ ตามที่ brief ระบุ) --------------------
   async function createTownOrder({ accountId, boardSlot = null, items, rewardCoins = null, rewardXp = null, deadline = null }) {
@@ -282,6 +330,14 @@ export function createRepository(adapter) {
         await tx.put('townOrderItems', { ...it, qtyFulfilled: it.qtyRequired });
       }
       await tx.put('townOrders', { ...order, status: 'fulfilled' });
+      return true;
+    });
+  }
+  async function deleteTownOrder(orderId) {
+    return adapter.transaction(['townOrders', 'townOrderItems'], async (tx) => {
+      const items = await tx.getByIndex('townOrderItems', 'townOrderId', orderId);
+      for (const it of items) await tx.delete('townOrderItems', it.id);
+      await tx.delete('townOrders', orderId);
       return true;
     });
   }
@@ -356,11 +412,11 @@ export function createRepository(adapter) {
     seedDefaultItemCategories, upsertItemCategory, listItemCategories,
     upsertItem, listItems, upsertProductionBuilding, createRecipe, getRecipeIngredients,
     setLowStockThreshold, setInventoryQuantity, getInventory, getLowStockAlerts,
-    startActivity, collectActivity, listActivities,
+    startActivity, collectActivity, listActivities, updateActivity, deleteActivity,
     listEvents, createEvent,
-    startEventProduction, collectEventProduction,
-    createBoatTruckOrder, fulfillBoatTruckOrder,
-    createTownOrder, fulfillTownOrder,
+    startEventProduction, collectEventProduction, updateEventProduction, deleteEventProduction,
+    createBoatTruckOrder, fulfillBoatTruckOrder, deleteBoatTruckOrder,
+    createTownOrder, fulfillTownOrder, deleteTownOrder,
     buyFromRoadsideShop,
     getDashboardFeed,
     exportAllData, importAllData,

@@ -40,9 +40,13 @@ export function mapAccountsForDashboard(accounts, dashboardFeed) {
     bg: acc.avatarBg,
     items: (feedByAccount.get(acc.id) || []).map((row) => ({
       id: `${row.category}-${row.sourceId}`,
+      // sourceId/quantity ดิบเก็บไว้ให้ EditActivityModal ใช้เรียก repo.updateActivity/deleteActivity ฯลฯ
+      // ตรงๆ โดยไม่ต้องแตกสตริง id เอง (quantity เป็น null สำหรับออเดอร์เรือ/รถ/เมือง ซึ่งไม่มีจำนวนเดี่ยว)
+      sourceId: row.sourceId,
       type: row.category,
       name: row.label || "(ไม่มีชื่อ)",
       qty: formatQty(row),
+      quantity: row.quantity,
       end: toEpochMs(row.endsAt),
     })),
   }));

@@ -20,7 +20,7 @@ function fmtCountdown(ms) {
   return `${s}วิ`;
 }
 
-function ItemRow({ item, tick }) {
+function ItemRow({ item, tick, onClick }) {
   const meta = TYPE_META[item.type];
   const Icon = meta.icon;
   const remaining = item.end - tick;
@@ -28,7 +28,13 @@ function ItemRow({ item, tick }) {
 
   return (
     <div
-      className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") onClick?.();
+      }}
+      className="flex items-center gap-3 rounded-xl px-3 py-2.5 cursor-pointer transition-transform active:scale-[0.98]"
       style={{ background: ready ? "linear-gradient(90deg,#E8C2EE,#F5CBDD)" : "rgba(255,255,255,0.55)" }}
     >
       <div
@@ -55,7 +61,7 @@ function ItemRow({ item, tick }) {
   );
 }
 
-function AccountCard({ account, tick, onAddActivity }) {
+function AccountCard({ account, tick, onAddActivity, onEditActivity }) {
   const sorted = useMemo(
     () => [...account.items].sort((a, b) => a.end - b.end),
     [account.items]
@@ -93,7 +99,7 @@ function AccountCard({ account, tick, onAddActivity }) {
       </div>
       <div className="flex flex-col gap-1.5 px-2.5 pb-2.5">
         {sorted.map((item) => (
-          <ItemRow key={item.id} item={item} tick={tick} />
+          <ItemRow key={item.id} item={item} tick={tick} onClick={() => onEditActivity?.(item, account.id)} />
         ))}
         <button
           onClick={() => onAddActivity(account.id)}
@@ -106,7 +112,7 @@ function AccountCard({ account, tick, onAddActivity }) {
   );
 }
 
-export default function FarmDashboard({ accounts = [], lowStockAlerts = [], onAddAccount, onAddActivity, nav }) {
+export default function FarmDashboard({ accounts = [], lowStockAlerts = [], onAddAccount, onAddActivity, onEditActivity, nav }) {
   const [tick, setTick] = useState(Date.now());
   useEffect(() => {
     const id = setInterval(() => setTick(Date.now()), 1000);
@@ -217,7 +223,7 @@ export default function FarmDashboard({ accounts = [], lowStockAlerts = [], onAd
         {/* Account cards */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
           {accounts.map((acc) => (
-            <AccountCard key={acc.id} account={acc} tick={tick} onAddActivity={onAddActivity} />
+            <AccountCard key={acc.id} account={acc} tick={tick} onAddActivity={onAddActivity} onEditActivity={onEditActivity} />
           ))}
           <button
             onClick={onAddAccount}

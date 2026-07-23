@@ -6,7 +6,15 @@ import AddAccountModal from "./AddAccountModal.jsx";
 import AddActivityModal from "./AddActivityModal.jsx";
 import { mapAccountsForDashboard } from "./mappers.js";
 import { mapInventoryForAccount, mapInventoryMatrix } from "./inventoryMappers.js";
-import { createAccountAction, addActivityAction } from "./actions.js";
+import EditActivityModal from "./EditActivityModal.jsx";
+import {
+  createAccountAction,
+  addActivityAction,
+  updateActivityItemAction,
+  deleteActivityItemAction,
+  collectActivityItemAction,
+  fulfillOrderItemAction,
+} from "./actions.js";
 import { SCHEMA } from "../storage/schema.js";
 import { createRepository } from "../storage/repository.js";
 
@@ -31,6 +39,7 @@ export default function App({ repo: injectedRepo }) {
   const [loading, setLoading] = useState(true);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [activityModalAccountId, setActivityModalAccountId] = useState(null);
+  const [editActivityItem, setEditActivityItem] = useState(null);
 
   // -------- Inventory page state --------
   const [selectedInventoryAccountId, setSelectedInventoryAccountId] = useState(null);
@@ -185,6 +194,81 @@ export default function App({ repo: injectedRepo }) {
     [repo, selectedInventoryAccountId, reloadInventory, reload]
   );
 
+  // เปิด modal แก้ไข/ลบกิจกรรม — แนบ accountId ของบัญชีที่กิจกรรมนั้นอยู่ติดไปกับ item เลย (item เดิม
+  // จาก mapAccountsForDashboard ไม่มี accountId ในตัวเอง เพราะถูก group ไว้ใต้ account.items แล้ว)
+  const handleOpenEditActivity = useCallback((item, accountId) => {
+    setEditActivityItem({ ...item, accountId });
+  }, []);
+
+  const handleSaveActivityItem = useCallback(
+    async (item, patch) => {
+      if (!repo) return;
+      try {
+        await updateActivityItemAction(repo, item, patch);
+      } catch (err) {
+        window.alert(err.message);
+        return;
+      }
+      await reload(repo);
+      setEditActivityItem(null);
+    },
+    [repo, reload]
+  );
+
+  const handleDeleteActivityItem = useCallback(
+    async (item) => {
+      if (!repo) return;
+      try {
+        await deleteActivityItemAction(repo, item);
+      } catch (err) {
+        window.alert(err.message);
+        return;
+      }
+      await reload(repo);
+      if (item.accountId === selectedInventoryAccountId) {
+        await reloadInventory(selectedInventoryAccountId, repo);
+      }
+      setEditActivityItem(null);
+    },
+    [repo, reload, reloadInventory, selectedInventoryAccountId]
+  );
+
+  const handleCollectActivityItem = useCallback(
+    async (item) => {
+      if (!repo) return;
+      try {
+        await collectActivityItemAction(repo, item);
+      } catch (err) {
+        window.alert(err.message);
+        return;
+      }
+      await reload(repo);
+      if (item.accountId === selectedInventoryAccountId) {
+        await reloadInventory(selectedInventoryAccountId, repo);
+      }
+      setEditActivityItem(null);
+    },
+    [repo, reload, reloadInventory, selectedInventoryAccountId]
+  );
+
+  const handleFulfillOrderItem = useCallback(
+    async (item) => {
+      if (!repo) return;
+      try {
+        await fulfillOrderItemAction(repo, item);
+      } catch (err) {
+        window.alert(err.message);
+        return;
+      }
+      await reload(repo);
+      if (item.accountId === selectedInventoryAccountId) {
+        await reloadInventory(selectedInventoryAccountId, repo);
+      }
+      setEditActivityItem(null);
+    },
+    [repo, reload, reloadInventory, selectedInventoryAccountId]
+  );
+
   if (loading) {
     return (
       <div
@@ -213,6 +297,7 @@ export default function App({ repo: injectedRepo }) {
           lowStockAlerts={lowStockAlerts}
           onAddAccount={() => setShowAddAccount(true)}
           onAddActivity={(accountId) => setActivityModalAccountId(accountId)}
+          onEditActivity={handleOpenEditActivity}
         />
       ) : (
         <InventoryPage
@@ -233,6 +318,15 @@ export default function App({ repo: injectedRepo }) {
         open={activityModalAccountId != null}
         onClose={() => setActivityModalAccountId(null)}
         onSubmit={handleCreateActivity}
+      />
+      <EditActivityModal
+        open={editActivityItem != null}
+        item={editActivityItem}
+        onClose={() => setEditActivityItem(null)}
+        onSave={handleSaveActivityItem}
+        onDelete={handleDeleteActivityItem}
+        onCollect={handleCollectActivityItem}
+        onFulfill={handleFulfillOrderItem}
       />
     </>
   );

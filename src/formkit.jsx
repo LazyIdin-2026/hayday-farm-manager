@@ -67,6 +67,20 @@ export function SecondaryButton({ children, className = "", ...props }) {
   );
 }
 
+// ปุ่มสำหรับการกระทำที่ทำลายข้อมูล (ลบ) — โทนแดง-พิงก์อุ่นแยกจาก PrimaryButton (ม่วง-ชมพู) ให้เห็นชัดว่าต่างกัน
+// แต่ยังคงเป็น pill gradient เข้าชุดกับดีไซน์เดิม ไม่ใช่สีแดงจัดแบบ error ทั่วไป
+export function DangerButton({ children, className = "", ...props }) {
+  return (
+    <button
+      {...props}
+      className={`rounded-full px-5 py-2.5 text-[13.5px] font-bold text-white transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${className}`}
+      style={{ fontFamily: "'Baloo 2', sans-serif", background: "linear-gradient(90deg,#E8677A,#D9527F)" }}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function TypePill({ active, color, bg, icon: Icon, label, ...props }) {
   return (
     <button

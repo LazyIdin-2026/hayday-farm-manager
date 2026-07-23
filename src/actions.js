@@ -88,3 +88,43 @@ export async function addActivityAction(repo, accountId, payload) {
 
   return null;
 }
+
+// ============================================================================
+// การกระทำจาก EditActivityModal (แตะรายการกิจกรรมในแดชบอร์ด) — รับ `item` ที่มาจาก
+// mapAccountsForDashboard โดยตรง (มี item.type และ item.sourceId ติดมาแล้ว) แล้ว dispatch
+// ไปที่ repo function ที่ถูกต้องตามประเภท ไม่ต้องแตะสตริง id เอง
+// ============================================================================
+
+/** แก้ไขจำนวน/เวลาที่เหลือของกิจกรรมเดี่ยว (พืชผล/สัตว์เลี้ยง/โรงงาน/โรงงานอีเวนต์) — ออเดอร์ยังไม่รองรับ */
+export async function updateActivityItemAction(repo, item, { quantity, durationSec }) {
+  if (["crop", "animal", "production"].includes(item.type)) {
+    return repo.updateActivity(item.sourceId, { quantity, durationSec });
+  }
+  if (item.type === "event_production") {
+    return repo.updateEventProduction(item.sourceId, { quantity, durationSec });
+  }
+  throw new Error(`ไม่รองรับการแก้ไขกิจกรรมประเภทนี้: ${item.type}`);
+}
+
+/** ลบกิจกรรม/ออเดอร์ทิ้ง รองรับทั้ง 6 ประเภท (ออเดอร์ลบรายการไอเทมของตัวเองไปด้วยอัตโนมัติ) */
+export async function deleteActivityItemAction(repo, item) {
+  if (["crop", "animal", "production"].includes(item.type)) return repo.deleteActivity(item.sourceId);
+  if (item.type === "event_production") return repo.deleteEventProduction(item.sourceId);
+  if (item.type === "boat_truck_order") return repo.deleteBoatTruckOrder(item.sourceId);
+  if (item.type === "town_order") return repo.deleteTownOrder(item.sourceId);
+  throw new Error(`ไม่รองรับการลบประเภทนี้: ${item.type}`);
+}
+
+/** เก็บกิจกรรมเดี่ยวที่พร้อมเก็บแล้ว (ตัดเข้าคลังสินค้าจริงผ่าน repo) */
+export async function collectActivityItemAction(repo, item) {
+  if (["crop", "animal", "production"].includes(item.type)) return repo.collectActivity(item.sourceId);
+  if (item.type === "event_production") return repo.collectEventProduction(item.sourceId);
+  throw new Error(`ไม่รองรับการเก็บประเภทนี้: ${item.type}`);
+}
+
+/** ทำเครื่องหมายว่าส่งออเดอร์แล้ว (ตัดสต็อกจริงตามที่ต้องส่ง — อาจ throw ถ้าสต็อกไม่พอ) */
+export async function fulfillOrderItemAction(repo, item) {
+  if (item.type === "boat_truck_order") return repo.fulfillBoatTruckOrder(item.sourceId);
+  if (item.type === "town_order") return repo.fulfillTownOrder(item.sourceId);
+  throw new Error(`ไม่รองรับการส่งออเดอร์ประเภทนี้: ${item.type}`);
+}
