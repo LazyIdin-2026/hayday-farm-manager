@@ -131,7 +131,7 @@ export default function EditActivityModal({ open, item, onClose, onSave, onDelet
             </Field>
             <Field label="เวลาที่เหลือ">
               <div className="flex gap-1.5">
-                <NumberInput min={0} value={durationValue} onChange={(e) => setDurationValue(e.target.value)} />
+                <NumberInput min={0} value={durationValue} onChange={(e) => setDurationValue(e.target.value)} className="min-w-0 flex-1" />
                 <SelectInput value={durationUnit} onChange={(e) => setDurationUnit(e.target.value)} className="w-24 shrink-0">
                   <option value="minutes">นาที</option>
                   <option value="hours">ชั่วโมง</option>
